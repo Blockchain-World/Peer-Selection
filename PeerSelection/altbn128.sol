@@ -1,7 +1,7 @@
 pragma solidity ^0.5.10;
 pragma experimental ABIEncoderV2;
 
-//BN 128 Curve 椭圆曲线方程，用于后续数字签名与认证，椭圆曲线离散对数问题kG=P，G和P为椭圆上的点
+//BN 128 Curve
 // y^2 = x^3 + 3
 
 library BN128Curve {
@@ -21,7 +21,7 @@ library BN128Curve {
 		return G1Point(1, 2);
 	}
 
-    // Given X, find Y 计算beta是为了验证给定的x是否在曲线上；获取曲线上对应x的y值
+    // Given X, find Y
     function FindYforX(uint256 x) internal view returns (uint256, uint256) {
         // beta = (x^3 + b) % p beta = (x^3 + CURVE_B) % FIELD_ORDER
         uint256 beta = addmod(mulmod(mulmod(x, x, FIELD_ORDER), x, FIELD_ORDER), CURVE_B, FIELD_ORDER);

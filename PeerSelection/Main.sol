@@ -9,19 +9,14 @@ import "./altbn128.sol";
  **/
 
 contract Main{
-    
-    using UTI for UTI.ERK;
-    using UTI for UTI.SubmittedERK;
-    using UTI for UTI.SubmittedRK;
-    using UTI for UTI.VPKEProof;
 
     using UTI for UTI.Deliverer;
     
-    event emitErk(uint, BN128Curve.G1Point, BN128Curve.G1Point, BN128Curve.G1Point, BN128Curve.G1Point);
-    event Debug(bytes32 VFDProof, bytes signature);
-    event Debug_1(uint now, uint timeout_dispute);
-    event SignerRecovered(address signer);
-    event ContractAddress(address contractAddress);
+    //event emitErk(uint, BN128Curve.G1Point, BN128Curve.G1Point, BN128Curve.G1Point, BN128Curve.G1Point);
+    //event Debug(bytes32 VFDProof, bytes signature);
+    //event Debug_1(uint now, uint timeout_dispute);
+    //event SignerRecovered(address signer);
+    //event ContractAddress(address contractAddress);
 
     address payable public provider;
     address payable public deliverer_d;
@@ -39,8 +34,8 @@ contract Main{
     // The deliverers obtained by the optimal selection algorithm
     uint[] selected_deliverers;
 
-    event Debug_2(UTI.Deliverer[] _deliverers, UTI.Deliverer _deliver, uint[] _selected_deliverers);
-    event Debug_3(address indexed  _sender);
+    //event Debug_2(UTI.Deliverer[] _deliverers, UTI.Deliverer _deliver, uint[] _selected_deliverers);
+    //event Debug_3(address indexed  _sender);
     
     uint public timeout_round;
     uint public timeout_delivered;
@@ -49,7 +44,7 @@ contract Main{
     uint public time_delivered;
     uint public end_time;
     
-    enum state {started, joined, selected, ready, initiated, first_delivered, revealing, revealed, sold, not_sold}
+    enum state {started, joined, selected, ready, initiated, first_delivered, revealing}
     
     state public round;
 
@@ -79,10 +74,6 @@ contract Main{
 
     // The start index (1-indexed) of request content
     uint public a = 0;
-
-    
-    // The revealed encrypted elements' information for recovering ctr (ctr<=n) sub-keys
-    UTI.ERK[] erk;
     
     modifier allowed(address addr, state s){
         require(now < timeout_round);
@@ -277,54 +268,6 @@ contract Main{
             inState(state.revealing);
             // selfdestruct(deliverer);
         }
-    }
-    
-    // Phase III: Reveal 
-
-    // for example,
-    //     position:    [1, 5], 1 and 5 are index in KT
-    // sub-position:      1-0      1-1    5-0      5-1
-    //           c1:    [[X, Y], [X, Y], [X, Y], [X, Y]]
-    //           c2:    [[X, Y], [X, Y], [X, Y], [X, Y]]
-    function revealKeys(uint[] memory _positions, BN128Curve.G1Point[] memory _c_1s, BN128Curve.G1Point[] memory _c_2s) allowed(provider, state.revealing) public {
-        assert ((_c_1s.length == _c_2s.length) && (_c_1s.length == 2 * _positions.length));
-        bytes32 erk_hash = "";
-        for (uint i = 0; i < _positions.length; i++){
-            emit emitErk(_positions[i], _c_1s[2*i], _c_2s[2*i], _c_1s[2*i+1], _c_2s[2*i+1]);
-            erk_hash = keccak256(abi.encodePacked(erk_hash, _c_1s[2*i].X, _c_1s[2*i].Y, _c_2s[2*i].X, _c_2s[2*i].Y, _c_1s[2*i+1].X, _c_1s[2*i+1].Y, _c_2s[2*i+1].X, _c_2s[2*i+1].Y));
-            erk.push(UTI.ERK(_positions[i], erk_hash));
-        }
-        timeout_dispute = now + 10 minutes;
-        inState(state.revealed);
-    }
-    
-    // In optimistic case, there is no dispute between the consumer and the provider
-    function payout() payable public {
-        require(round == state.revealed);
-        require(now > timeout_dispute);
-        if((ctr > 0) && (ctr <= (n-a+1))){
-            if(ctr == (n-a+1)){
-                provider.transfer(payment_C*ctr + payment_pf);
-            }else{
-                provider.transfer(payment_C*ctr + payment_pf);
-                consumer.transfer(payment_C*(n-a+1-ctr));
-            }
-            inState(state.sold);
-        }
-    }
-
-    // when the protocol instance completes, reset to the ready state and receive other consumers' request (i.e., repeatable delivery)
-    function reset() public {
-        require(msg.sender == provider);
-        require(round == state.sold || round == state.not_sold);
-        a = 0;
-        ctr = 0;
-        timeout_delivered = 0;
-        timeout_dispute = 0;
-        theta = theta - 1;
-        consumer = 0x0000000000000000000000000000000000000000; // nullify consumer's address
-        vpk_consumer = BN128Curve.G1Point(0, 0); // nullify consumer's verifiable decryption pk
-        inState(state.ready);
     }
     
 }

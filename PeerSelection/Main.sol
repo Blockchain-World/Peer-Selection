@@ -40,7 +40,6 @@ contract Main{
     uint public timeout_round;
     uint public timeout_delivered;
     uint public timeout_dispute;
-
     uint public time_delivered;
     uint public end_time;
     
@@ -110,9 +109,7 @@ contract Main{
     // The deliverer joins the smart contract
     function join(uint _bid) public {
         require(round == state.started);
-
         bool flag = false;
-
         for (uint i = 0; i < deliverers.length; i ++) {
             if (msg.sender == deliverers[i].deliverer_address) {
                 flag = true;
@@ -143,24 +140,19 @@ contract Main{
     function select() public {
         require(round == state.joined);
         require(now < timeout_round);
-        
         selected_deliverers.push(0);
         // Delegate authority to the selected optimital deliverer
         for (uint i = 0; i < selected_deliverers.length; i ++) {
             deliverers[selected_deliverers[i]].is_selected = true;
         }
-
         deliverer_d = deliverers[selected_deliverers[0]].deliverer_address;
-
         //emit Debug_2(deliverers, deliver, selected_deliverers);
-
         inState(state.selected);
     }
     
     // Determine whether it is the selected deliverer
     function prepared() allowed(deliverer_d, state.selected) public  {
         bool flag = false;
-
         //emit Debug_2(deliverers, deliver, selected_deliverers);
         // Determine whether the person executing the delivery has delivery authority
         for (uint i = 0; i < deliverers.length; i ++) {
@@ -171,7 +163,6 @@ contract Main{
             }
         }
         require(flag == true);
-
         inState(state.ready);
     }
     
@@ -183,9 +174,7 @@ contract Main{
         require(round == state.ready);
         a = _a;                        // store a
         consumer = msg.sender;         // store pk_C
-
-        consumer = 0xFCAd0B19bB29D4674531d6f115237E16AfCE377c;
-
+        //consumer = 0xFCAd0B19bB29D4674531d6f115237E16AfCE377c;
         vpk_consumer = _vpk_consumer;  // store vpk_consumer
         timeout_delivered = now + 10 minutes; // start the timer
         inState(state.initiated);
@@ -209,16 +198,12 @@ contract Main{
         // address signer = UTI.recoverSigner(VFDProof, _signature_C);
         // emit SignerRecovered(signer);
         // address contractAddr = address(this);
-
         //emit ContractAddress(contractAddr);
 
         if (UTI.recoverSigner(VFDProof, _signature_C) == consumer) {
             ctr = _i - a + 1; // update ctr
-            
             consumer = msg.sender;
-
             end_time = now;
-            
             uint num;
             for (uint i = 0; i < selected_deliverers.length; i ++) {
                 if (deliverers[selected_deliverers[i]].deliverer_address == msg.sender) {
@@ -229,7 +214,6 @@ contract Main{
                     break;
                 }
             }
-
             return true;
         }
         return false;

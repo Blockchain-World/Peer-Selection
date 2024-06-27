@@ -237,7 +237,7 @@ contract Main{
         }
     }
     
-    function delivered() payable allowed(consumer, state.initiated) public {
+    function delivered() payable allowed(consumer, state.first_delivered) public {
         require(now < timeout_delivered);
         require(ctr >= 0 && ctr <= n);
         // if ctr is not updated (i.e., ctr == 0), the state will not be updated untill verifyVFDProof()
